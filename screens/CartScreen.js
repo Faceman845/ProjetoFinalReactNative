@@ -1,9 +1,18 @@
 import React, { useContext } from 'react';
-import { View, Text, Button, FlatList, StyleSheet } from 'react-native';
+import { View, Text, Button, FlatList, StyleSheet, ActivityIndicator } from 'react-native';
 import { AuthContext } from '../context/AuthContext';
 
 export default function CartScreen() {
-  const { cart, clearCart } = useContext(AuthContext);
+  const { cart, clearCart, isLoading } = useContext(AuthContext);
+
+  if (isLoading) {
+    return (
+      <View style={[styles.container, styles.centered]}>
+        <ActivityIndicator size="large" color="#0000ff" />
+        <Text style={styles.loadingText}>Carregando carrinho...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -14,9 +23,11 @@ export default function CartScreen() {
         <>
           <FlatList
             data={cart}
-            keyExtractor={(item, index) => index.toString()}
+            keyExtractor={(item, index) => item.id || index.toString()}
             renderItem={({ item }) => (
-              <Text style={styles.item}>{item.title}</Text>
+              <View style={styles.itemContainer}>
+                <Text style={styles.item}>{item.nome || item.title}</Text>
+              </View>
             )}
           />
           <Button title="Esvaziar Carrinho" onPress={clearCart} color="red" />
@@ -29,13 +40,29 @@ export default function CartScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    padding: 20,
+  },
+  centered: {
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
   },
   title: {
     fontSize: 22,
     fontWeight: 'bold',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  itemContainer: {
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
     marginBottom: 10,
+  },
+  item: {
+    fontSize: 16,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
   },
 });

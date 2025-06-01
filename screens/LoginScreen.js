@@ -1,11 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
-import { signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
+import { signInWithEmailAndPassword, signInWithPopup, onAuthStateChanged } from 'firebase/auth';
 import { auth, googleProvider } from '../services/firebase';
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+
+
+  useEffect(() => {
+    const checkLogin = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        //Usuário já está logado
+        navigation.replace('Home');
+      }
+    });
+    return () => checkLogin();
+  }, []);
 
   const handleLogin = async () => {
     try {
