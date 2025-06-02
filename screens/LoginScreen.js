@@ -7,13 +7,10 @@ export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-
   useEffect(() => {
     const checkLogin = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        //Usuário já está logado
-        navigation.replace('Home');
-      }
+      // No need to navigate here - the Routes component will handle this automatically
+      // when the user state changes in the AuthContext
     });
     return () => checkLogin();
   }, []);
@@ -21,6 +18,7 @@ export default function LoginScreen({ navigation }) {
   const handleLogin = async () => {
     try {
       await signInWithEmailAndPassword(auth, email, password);
+      // Successfully logged in - AuthContext will update and Routes will switch to AppStack
     } catch (error) {
       alert(error.message);
     }
@@ -29,6 +27,7 @@ export default function LoginScreen({ navigation }) {
   const handleGoogleLogin = async () => {
     try {
       await signInWithPopup(auth, googleProvider);
+      // Successfully logged in - AuthContext will update and Routes will switch to AppStack
     } catch (error) {
       alert(error.message);
     }

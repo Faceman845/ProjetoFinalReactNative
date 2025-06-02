@@ -3,10 +3,10 @@ import { View, Text, Button, StyleSheet } from 'react-native';
 import { AuthContext } from '../context/AuthContext';
 
 export default function HomeScreen({ navigation }) {
-  const { logout, clearCart } = useContext(AuthContext);
+  const { logout } = useContext(AuthContext);
 
   const handleLogout = () => {
-    clearCart();
+    // Don't clear cart on logout to preserve items between sessions
     logout();
   };
 

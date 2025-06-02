@@ -46,24 +46,17 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
-      
-      // If user logs out, we can optionally clear the cart
-      // Uncomment this if you want to clear cart on logout
-      // if (!currentUser) {
-      //   clearCart();
-      // }
     });
     return () => unsubscribe();
   }, []);
 
   const logout = async () => {
-    await signOut(auth);
-    setCart([]);
-    // Clear cart from AsyncStorage on logout
     try {
-      await AsyncStorage.removeItem('userCart');
+      // Only sign out from Firebase, don't clear cart
+      await signOut(auth);
+      console.log('[DEBUG] User signed out, cart preserved');
     } catch (error) {
-      console.error('Error clearing cart from AsyncStorage:', error);
+      console.error('Error during logout:', error);
     }
   };
 
