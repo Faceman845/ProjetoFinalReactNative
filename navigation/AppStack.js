@@ -6,8 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { AuthContext } from '../context/AuthContext';
 import CatalogScreen from '../screens/CatalogScreen';
 import CartScreen from '../screens/CartScreen';
-
-import ProfileScreen from '../screens/ProfileScreen';
+import UserProfileScreen from '../screens/UserProfileScreen';
 // --- IMAGENS ---
 const headerLogoImage = require('../assets/header_logo_image.png');
 
