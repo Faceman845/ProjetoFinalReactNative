@@ -2,15 +2,20 @@ import React, { useState, useContext, useEffect } from 'react';
 import { 
   View, 
   Text, 
-  TextInput, 
   StyleSheet, 
   ScrollView, 
-  TouchableOpacity,
   Alert
 } from 'react-native';
 import { AuthContext } from '../context/AuthContext';
-import { doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
-import { db } from '../services/firebase';
+
+// Componentes
+import PersonalDataForm from '../components/profile/PersonalDataForm';
+import AddressForm from '../components/profile/AddressForm';
+import ActionButtons from '../components/profile/ActionButtons';
+
+// Helpers
+import { formatarCpf, formatarTelefone, buscarEnderecoPorCep } from '../utils/formatHelpers';
+import { carregarDadosUsuario, salvarDadosUsuario, excluirDadosUsuario } from '../utils/firestoreHelpers';
 
 export default function UserProfileScreen({ navigation }) {
   const { user } = useContext(AuthContext);
@@ -41,7 +46,7 @@ export default function UserProfileScreen({ navigation }) {
 
   // Carrega os dados do usuário quando a tela é montada
   useEffect(() => {
-    const carregarDadosUsuario = async () => {
+    const loadUserData = async () => {
       // Verifica se o usuário está autenticado
       if (!user?.uid) {
         setIsLoading(false);
@@ -49,11 +54,9 @@ export default function UserProfileScreen({ navigation }) {
       }
       
       try {
-        const userDocRef = doc(db, 'usuarios', user.uid);
-        const userDoc = await getDoc(userDocRef);
+        const userData = await carregarDadosUsuario(user.uid);
         
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
+        if (userData) {
           setNome(userData.nome || '');
           setCpf(userData.cpf || '');
           setTelefone(userData.telefone || '');
@@ -72,39 +75,31 @@ export default function UserProfileScreen({ navigation }) {
         setIsLoading(false);
       }
     };
-
-    carregarDadosUsuario();
+    
+    loadUserData();
   }, [user]);
 
-  // Função para buscar endereço pelo CEP usando a API ViaCEP
+  // Função para buscar endereço pelo CEP
   const buscarCep = async () => {
-    if (cep.length !== 8) {
+    if (cep.length < 8) {
       Alert.alert('CEP Inválido', 'Por favor, digite um CEP válido com 8 dígitos');
       return;
     }
-
+    
     try {
-      const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
-      const data = await response.json();
-      
-      if (data.erro) {
-        Alert.alert('CEP não encontrado', 'O CEP informado não foi encontrado');
-        return;
-      }
-      
-      setEndereco(data.logradouro || '');
-      setBairro(data.bairro || '');
-      setCidade(data.localidade || '');
-      setEstado(data.uf || '');
+      const enderecoDados = await buscarEnderecoPorCep(cep);
+      setEndereco(enderecoDados.endereco || '');
+      setBairro(enderecoDados.bairro || '');
+      setCidade(enderecoDados.cidade || '');
+      setEstado(enderecoDados.estado || '');
     } catch (error) {
       console.error('Erro ao buscar CEP:', error);
-      Alert.alert('Erro', 'Não foi possível buscar o CEP. Verifique sua conexão.');
+      Alert.alert('Erro', error.message || 'Ocorreu um erro ao buscar o CEP. Tente novamente mais tarde.');
     }
   };
 
   // Função para salvar os dados do perfil
   const salvarPerfil = async () => {
-    // Verifica se o usuário está autenticado
     if (!user?.uid) {
       Alert.alert('Erro de Autenticação', 'Você precisa estar logado para salvar seu perfil');
       return;
@@ -114,10 +109,9 @@ export default function UserProfileScreen({ navigation }) {
       Alert.alert('Campo obrigatório', 'Por favor, preencha seu nome');
       return;
     }
-
+    
     try {
-      const userDocRef = doc(db, 'usuarios', user.uid);
-      await setDoc(userDocRef, {
+      const userData = {
         nome,
         cpf,
         telefone,
@@ -128,54 +122,25 @@ export default function UserProfileScreen({ navigation }) {
         bairro,
         cidade,
         estado,
-        email: user.email,
-        ultimaAtualizacao: new Date()
-      }, { merge: true });
+        updatedAt: new Date()
+      };
       
-      Alert.alert('Sucesso', 'Dados salvos com sucesso!');
+      await salvarDadosUsuario(user.uid, userData);
+      Alert.alert('Sucesso', 'Seus dados foram salvos com sucesso!');
     } catch (error) {
       console.error('Erro ao salvar perfil:', error);
       Alert.alert('Erro', 'Não foi possível salvar seus dados. Tente novamente mais tarde.');
     }
   };
 
-  // Função para formatar CPF enquanto digita
-  const formatarCpf = (texto) => {
-    const cpfLimpo = texto.replace(/\D/g, '');
-    
-    if (cpfLimpo.length <= 11) {
-      let cpfFormatado = cpfLimpo;
-      
-      if (cpfLimpo.length > 3) {
-        cpfFormatado = cpfLimpo.replace(/^(\d{3})(\d)/, '$1.$2');
-      }
-      if (cpfLimpo.length > 6) {
-        cpfFormatado = cpfFormatado.replace(/^(\d{3})\.(\d{3})(\d)/, '$1.$2.$3');
-      }
-      if (cpfLimpo.length > 9) {
-        cpfFormatado = cpfFormatado.replace(/^(\d{3})\.(\d{3})\.(\d{3})(\d)/, '$1.$2.$3-$4');
-      }
-      
-      setCpf(cpfFormatado);
-    }
+  // Wrapper para formatar CPF enquanto digita
+  const handleCpfChange = (texto) => {
+    setCpf(formatarCpf(texto));
   };
-
-  // Função para formatar telefone enquanto digita
-  const formatarTelefone = (texto) => {
-    const telefoneLimpo = texto.replace(/\D/g, '');
-    
-    if (telefoneLimpo.length <= 11) {
-      let telefoneFormatado = telefoneLimpo;
-      
-      if (telefoneLimpo.length > 2) {
-        telefoneFormatado = telefoneLimpo.replace(/^(\d{2})(\d)/, '($1) $2');
-      }
-      if (telefoneLimpo.length > 6) {
-        telefoneFormatado = telefoneFormatado.replace(/^(\(\d{2}\)\s)(\d{4,5})(\d)/, '$1$2-$3');
-      }
-      
-      setTelefone(telefoneFormatado);
-    }
+  
+  // Wrapper para formatar telefone enquanto digita
+  const handleTelefoneChange = (texto) => {
+    setTelefone(formatarTelefone(texto));
   };
   
   // Função para limpar as informações do perfil
@@ -200,13 +165,10 @@ export default function UserProfileScreen({ navigation }) {
             try {
               console.log('Usuário confirmou a limpeza de dados');
               
-              // Verificar se o documento existe antes de tentar excluí-lo
-              const userDocRef = doc(db, 'usuarios', user.uid);
-              const docSnap = await getDoc(userDocRef);
+              // Tentar excluir os dados do usuário
+              const excluido = await excluirDadosUsuario(user.uid);
               
-              if (docSnap.exists()) {
-                console.log('Documento encontrado, iniciando exclusão...');
-                await deleteDoc(userDocRef);
+              if (excluido) {
                 console.log('Documento excluído com sucesso');
               } else {
                 console.log('Documento não encontrado, nada para excluir');
@@ -266,137 +228,38 @@ export default function UserProfileScreen({ navigation }) {
       <View style={styles.container}>
         <Text style={styles.title}>Meu Perfil</Text>
         
-        <Text style={styles.sectionTitle}>Dados Pessoais</Text>
-        
-        <Text style={styles.label}>Email</Text>
-        <TextInput
-          style={[styles.input, {backgroundColor: '#eee'}]}
-          value={user?.email || ''}
-          editable={false}
+        <PersonalDataForm 
+          email={user?.email}
+          nome={nome}
+          setNome={setNome}
+          cpf={cpf}
+          setCpf={handleCpfChange}
+          telefone={telefone}
+          setTelefone={handleTelefoneChange}
         />
         
-        <Text style={styles.label}>Nome Completo</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Digite seu nome completo"
-          value={nome}
-          onChangeText={setNome}
+        <AddressForm 
+          cep={cep}
+          setCep={setCep}
+          endereco={endereco}
+          setEndereco={setEndereco}
+          numero={numero}
+          setNumero={setNumero}
+          complemento={complemento}
+          setComplemento={setComplemento}
+          bairro={bairro}
+          setBairro={setBairro}
+          cidade={cidade}
+          setCidade={setCidade}
+          estado={estado}
+          setEstado={setEstado}
+          buscarCep={buscarCep}
         />
         
-        <Text style={styles.label}>CPF</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="000.000.000-00"
-          value={cpf}
-          onChangeText={formatarCpf}
-          keyboardType="numeric"
-          maxLength={14}
+        <ActionButtons 
+          onSave={salvarPerfil}
+          onClear={limparInformacoes}
         />
-        
-        <Text style={styles.label}>Telefone</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="(00) 00000-0000"
-          value={telefone}
-          onChangeText={formatarTelefone}
-          keyboardType="phone-pad"
-          maxLength={15}
-        />
-        
-        <Text style={styles.sectionTitle}>Endereço</Text>
-        
-        <View style={styles.cepContainer}>
-          <View style={styles.cepInputContainer}>
-            <Text style={styles.label}>CEP</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="00000-000"
-              value={cep}
-              onChangeText={setCep}
-              keyboardType="numeric"
-              maxLength={8}
-            />
-          </View>
-          <TouchableOpacity style={styles.cepButton} onPress={buscarCep}>
-            <Text style={styles.cepButtonText}>Buscar</Text>
-          </TouchableOpacity>
-        </View>
-        
-        <Text style={styles.label}>Endereço</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Rua, Avenida, etc."
-          value={endereco}
-          onChangeText={setEndereco}
-        />
-        
-        <View style={styles.rowContainer}>
-          <View style={styles.halfInput}>
-            <Text style={styles.label}>Número</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Nº"
-              value={numero}
-              onChangeText={setNumero}
-              keyboardType="numeric"
-            />
-          </View>
-          
-          <View style={styles.halfInput}>
-            <Text style={styles.label}>Complemento</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Apto, Bloco, etc."
-              value={complemento}
-              onChangeText={setComplemento}
-            />
-          </View>
-        </View>
-        
-        <Text style={styles.label}>Bairro</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Bairro"
-          value={bairro}
-          onChangeText={setBairro}
-        />
-        
-        <View style={styles.rowContainer}>
-          <View style={styles.cityInput}>
-            <Text style={styles.label}>Cidade</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Cidade"
-              value={cidade}
-              onChangeText={setCidade}
-            />
-          </View>
-          
-          <View style={styles.stateInput}>
-            <Text style={styles.label}>Estado</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="UF"
-              value={estado}
-              onChangeText={setEstado}
-              maxLength={2}
-            />
-          </View>
-        </View>
-        
-        <TouchableOpacity style={styles.saveButton} onPress={salvarPerfil}>
-          <Text style={styles.saveButtonText}>Salvar Dados</Text>
-        </TouchableOpacity>
-        
-        <View style={styles.spacing} />
-        
-        <TouchableOpacity 
-          style={styles.clearButton} 
-          onPress={limparInformacoes}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.clearButtonText}>Limpar Informações</Text>
-        </TouchableOpacity>
       </View>
     </ScrollView>
   );
@@ -422,6 +285,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 20,
     textAlign: 'center',
+    color: '#333',
   },
   sectionTitle: {
     fontSize: 18,
