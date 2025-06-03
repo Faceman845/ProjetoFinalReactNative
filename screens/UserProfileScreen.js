@@ -19,6 +19,13 @@ export default function UserProfileScreen({ navigation }) {
   const [nome, setNome] = useState('');
   const [cpf, setCpf] = useState('');
   const [telefone, setTelefone] = useState('');
+  const [cep, setCep] = useState('');
+  const [endereco, setEndereco] = useState('');
+  const [numero, setNumero] = useState('');
+  const [complemento, setComplemento] = useState('');
+  const [bairro, setBairro] = useState('');
+  const [cidade, setCidade] = useState('');
+  const [estado, setEstado] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
   // Carrega os dados do usuário quando a tela é montada
@@ -34,6 +41,13 @@ export default function UserProfileScreen({ navigation }) {
             setNome(userData.nome || '');
             setCpf(userData.cpf || '');
             setTelefone(userData.telefone || '');
+            setCep(userData.cep || '');
+            setEndereco(userData.endereco || '');
+            setNumero(userData.numero || '');
+            setComplemento(userData.complemento || '');
+            setBairro(userData.bairro || '');
+            setCidade(userData.cidade || '');
+            setEstado(userData.estado || '');
           }
         } catch (error) {
           console.error('Erro ao carregar dados do usuário:', error);
@@ -46,14 +60,52 @@ export default function UserProfileScreen({ navigation }) {
     carregarDadosUsuario();
   }, [user]);
 
+  // Função para buscar endereço pelo CEP usando a API ViaCEP
+  const buscarCep = async () => {
+    if (cep.length !== 8) {
+      Alert.alert('CEP Inválido', 'Por favor, digite um CEP válido com 8 dígitos');
+      return;
+    }
+
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+      const data = await response.json();
+      
+      if (data.erro) {
+        Alert.alert('CEP não encontrado', 'O CEP informado não foi encontrado');
+        return;
+      }
+      
+      setEndereco(data.logradouro || '');
+      setBairro(data.bairro || '');
+      setCidade(data.localidade || '');
+      setEstado(data.uf || '');
+    } catch (error) {
+      console.error('Erro ao buscar CEP:', error);
+      Alert.alert('Erro', 'Não foi possível buscar o CEP. Verifique sua conexão.');
+    }
+  };
+
   // Função para salvar os dados do perfil
   const salvarPerfil = async () => {
+    if (!nome.trim()) {
+      Alert.alert('Campo obrigatório', 'Por favor, preencha seu nome');
+      return;
+    }
+
     try {
       const userDocRef = doc(db, 'usuarios', user.uid);
       await setDoc(userDocRef, {
         nome,
         cpf,
         telefone,
+        cep,
+        endereco,
+        numero,
+        complemento,
+        bairro,
+        cidade,
+        estado,
         email: user.email,
         ultimaAtualizacao: new Date()
       }, { merge: true });
@@ -62,6 +114,45 @@ export default function UserProfileScreen({ navigation }) {
     } catch (error) {
       console.error('Erro ao salvar perfil:', error);
       Alert.alert('Erro', 'Não foi possível salvar seus dados. Tente novamente mais tarde.');
+    }
+  };
+
+  // Função para formatar CPF enquanto digita
+  const formatarCpf = (texto) => {
+    const cpfLimpo = texto.replace(/\D/g, '');
+    
+    if (cpfLimpo.length <= 11) {
+      let cpfFormatado = cpfLimpo;
+      
+      if (cpfLimpo.length > 3) {
+        cpfFormatado = cpfLimpo.replace(/^(\d{3})(\d)/, '$1.$2');
+      }
+      if (cpfLimpo.length > 6) {
+        cpfFormatado = cpfFormatado.replace(/^(\d{3})\.(\d{3})(\d)/, '$1.$2.$3');
+      }
+      if (cpfLimpo.length > 9) {
+        cpfFormatado = cpfFormatado.replace(/^(\d{3})\.(\d{3})\.(\d{3})(\d)/, '$1.$2.$3-$4');
+      }
+      
+      setCpf(cpfFormatado);
+    }
+  };
+
+  // Função para formatar telefone enquanto digita
+  const formatarTelefone = (texto) => {
+    const telefoneLimpo = texto.replace(/\D/g, '');
+    
+    if (telefoneLimpo.length <= 11) {
+      let telefoneFormatado = telefoneLimpo;
+      
+      if (telefoneLimpo.length > 2) {
+        telefoneFormatado = telefoneLimpo.replace(/^(\d{2})(\d)/, '($1) $2');
+      }
+      if (telefoneLimpo.length > 6) {
+        telefoneFormatado = telefoneFormatado.replace(/^(\(\d{2}\)\s)(\d{4,5})(\d)/, '$1$2-$3');
+      }
+      
+      setTelefone(telefoneFormatado);
     }
   };
 
@@ -98,9 +189,9 @@ export default function UserProfileScreen({ navigation }) {
         <Text style={styles.label}>CPF</Text>
         <TextInput
           style={styles.input}
-          placeholder="CPF"
+          placeholder="000.000.000-00"
           value={cpf}
-          onChangeText={setCpf}
+          onChangeText={formatarCpf}
           keyboardType="numeric"
           maxLength={14}
         />
@@ -108,13 +199,94 @@ export default function UserProfileScreen({ navigation }) {
         <Text style={styles.label}>Telefone</Text>
         <TextInput
           style={styles.input}
-          placeholder="Telefone"
+          placeholder="(00) 00000-0000"
           value={telefone}
-          onChangeText={setTelefone}
+          onChangeText={formatarTelefone}
           keyboardType="phone-pad"
           maxLength={15}
         />
-
+        
+        <Text style={styles.sectionTitle}>Endereço</Text>
+        
+        <View style={styles.cepContainer}>
+          <View style={styles.cepInputContainer}>
+            <Text style={styles.label}>CEP</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="00000-000"
+              value={cep}
+              onChangeText={setCep}
+              keyboardType="numeric"
+              maxLength={8}
+            />
+          </View>
+          <TouchableOpacity style={styles.cepButton} onPress={buscarCep}>
+            <Text style={styles.cepButtonText}>Buscar</Text>
+          </TouchableOpacity>
+        </View>
+        
+        <Text style={styles.label}>Endereço</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Rua, Avenida, etc."
+          value={endereco}
+          onChangeText={setEndereco}
+        />
+        
+        <View style={styles.rowContainer}>
+          <View style={styles.halfInput}>
+            <Text style={styles.label}>Número</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Nº"
+              value={numero}
+              onChangeText={setNumero}
+              keyboardType="numeric"
+            />
+          </View>
+          
+          <View style={styles.halfInput}>
+            <Text style={styles.label}>Complemento</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Apto, Bloco, etc."
+              value={complemento}
+              onChangeText={setComplemento}
+            />
+          </View>
+        </View>
+        
+        <Text style={styles.label}>Bairro</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Bairro"
+          value={bairro}
+          onChangeText={setBairro}
+        />
+        
+        <View style={styles.rowContainer}>
+          <View style={styles.cityInput}>
+            <Text style={styles.label}>Cidade</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Cidade"
+              value={cidade}
+              onChangeText={setCidade}
+            />
+          </View>
+          
+          <View style={styles.stateInput}>
+            <Text style={styles.label}>Estado</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="UF"
+              value={estado}
+              onChangeText={setEstado}
+              maxLength={2}
+            />
+          </View>
+        </View>
+        
         <TouchableOpacity style={styles.saveButton} onPress={salvarPerfil}>
           <Text style={styles.saveButtonText}>Salvar Dados</Text>
         </TouchableOpacity>
@@ -159,6 +331,41 @@ const styles = StyleSheet.create({
     padding: 10,
     marginBottom: 15,
     backgroundColor: '#f9f9f9',
+  },
+  cepContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    marginBottom: 10,
+  },
+  cepInputContainer: {
+    flex: 3,
+  },
+  cepButton: {
+    flex: 1,
+    backgroundColor: '#4b7bec',
+    padding: 12,
+    borderRadius: 5,
+    marginLeft: 10,
+    marginBottom: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cepButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+  },
+  rowContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  halfInput: {
+    width: '48%',
+  },
+  cityInput: {
+    width: '75%',
+  },
+  stateInput: {
+    width: '20%',
   },
   saveButton: {
     backgroundColor: '#2ecc71',
