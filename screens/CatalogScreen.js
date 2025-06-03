@@ -8,10 +8,10 @@ import { Ionicons } from '@expo/vector-icons';
 const { width } = Dimensions.get('window');
 const numColumns = 2;
 const productPadding = 8; // Padding ao redor de cada item
-const availableWidth = width - (productPadding * (numColumns + 1)); // Largura disponível descontando paddings laterais
+const availableWidth = width - (productPadding * (numColumns + 1)); // largura disponível para os produtos, considerando o padding
 const productWidth = availableWidth / numColumns;
 
-export default function CatalogScreen({ route, navigation }) { // Adicione route e navigation
+export default function CatalogScreen({ route, navigation }) { // adiciona route e navigation como props
   const { user, addToCart, cart } = useContext(AuthContext);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -45,8 +45,7 @@ export default function CatalogScreen({ route, navigation }) { // Adicione route
         const productsSnapshot = await getDocs(productsQuery);
         const productsList = productsSnapshot.docs.map(doc => ({
           id: doc.id,
-          ...doc.data(),
-          // Garanta que doc.data() inclua 'imageUrl' e 'nome', e opcionalmente 'preco'
+          ...doc.data(), // espalha os dados do documento
         }));
 
         setProducts(productsList);
@@ -59,12 +58,12 @@ export default function CatalogScreen({ route, navigation }) { // Adicione route
     };
 
     fetchProducts();
-  }, [categoryFilter, navigation]); // Re-execute o fetch se categoryFilter ou navigation mudar
+  }, [categoryFilter, navigation]); // Adiciona navigation como dependência para atualizar o título
 
   const isItemInCart = (itemId) => {
     return cart.some(item => item.id === itemId);
   };
-
+  // Função para renderizar cada item do produto
   const renderProductItem = ({ item }) => (
     <View style={styles.productItemContainer}>
       <TouchableOpacity activeOpacity={0.8} onPress={() => alert(`Detalhes de: ${item.nome}`)}>

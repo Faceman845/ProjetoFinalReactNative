@@ -87,7 +87,7 @@ function CustomDrawerContent(props) {
       <View style={styles.drawerSeparator} />
       <DrawerItem
         label="Sair"
-        labelStyle={styles.drawerLabelLogout} // Pode ter um estilo diferente se quiser
+        labelStyle={styles.drawerLabelLogout} 
         onPress={handleLogout}
         icon={({ focused, color, size }) => <Ionicons name="log-out-outline" size={size} color={styles.drawerLabelLogout.color || styles.drawerLabel.color} />}
       />

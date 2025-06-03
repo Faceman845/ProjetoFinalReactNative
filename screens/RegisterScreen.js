@@ -100,7 +100,7 @@ export default function RegisterScreen({ navigation }) {
         />
         <Text style={styles.label}>Senha</Text>
         <TextInput
-          placeholder="Crie sua senha" // Alterado para ser mais genérico
+          placeholder="Crie sua senha" 
           secureTextEntry
           value={password}
           onChangeText={setPassword}
@@ -160,19 +160,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#333',
   },
-  logo: { // Estilo para a imagem do logo menor
+  logo: { 
     width: 160,
     height: 80,
-    marginBottom: 30,
+    marginBottom: 10,
   },
-  logoText: { // Placeholder de texto para o logo
-    fontSize: 40, // Um pouco menor que na tela de login
-    fontWeight: 'bold',
-    color: '#FF69B4',
-    fontFamily: Platform.OS === 'ios' ? 'AvenirNext-Regular' : 'Roboto-Regular',
-    marginBottom: 30,
-  },
-  inputGroup: { // Mesmo estilo do LoginScreen
+  inputGroup: { 
     width: '100%',
     backgroundColor: '#E0F7FA',
     borderRadius: 15,
@@ -186,13 +179,13 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
-  label: { // Mesmo estilo do LoginScreen
+  label: { 
     fontSize: 16,
     color: '#00796B',
     marginBottom: 6,
     fontWeight: '600',
   },
-  input: { // Mesmo estilo do LoginScreen
+  input: {
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#B2DFDB',
@@ -206,18 +199,18 @@ const styles = StyleSheet.create({
   buttonRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    width: '90%', // Ocupa a largura do container dos inputs
+    width: '90%', 
     marginBottom: 20,
   },
   button: {
     paddingVertical: 16,
     borderRadius: 25,
     alignItems: 'center',
-    width: '48%', // Para caber dois botões na linha
+    width: '48%', 
     elevation: 2,
   },
   buttonFilled: {
-    backgroundColor: '#00BCD4', // Azul principal
+    backgroundColor: '#00BCD4',
   },
   buttonOutlined: {
     backgroundColor: '#FFFFFF',
