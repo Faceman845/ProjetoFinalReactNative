@@ -15,6 +15,17 @@ import { db } from '../services/firebase';
 export default function UserProfileScreen({ navigation }) {
   const { user } = useContext(AuthContext);
   
+  // Redirecionar para a tela de login se o usuário não estiver autenticado
+  useEffect(() => {
+    if (!user) {
+      Alert.alert(
+        "Acesso Restrito", 
+        "Você precisa estar logado para acessar seu perfil.",
+        [{ text: "OK", onPress: () => navigation.navigate('Home') }]
+      );
+    }
+  }, [user, navigation]);
+  
   // Estados para os campos do perfil
   const [nome, setNome] = useState('');
   const [cpf, setCpf] = useState('');
@@ -31,30 +42,35 @@ export default function UserProfileScreen({ navigation }) {
   // Carrega os dados do usuário quando a tela é montada
   useEffect(() => {
     const carregarDadosUsuario = async () => {
-      if (user?.uid) {
-        try {
-          const userDocRef = doc(db, 'usuarios', user.uid);
-          const userDoc = await getDoc(userDocRef);
-          
-          if (userDoc.exists()) {
-            const userData = userDoc.data();
-            setNome(userData.nome || '');
-            setCpf(userData.cpf || '');
-            setTelefone(userData.telefone || '');
-            setCep(userData.cep || '');
-            setEndereco(userData.endereco || '');
-            setNumero(userData.numero || '');
-            setComplemento(userData.complemento || '');
-            setBairro(userData.bairro || '');
-            setCidade(userData.cidade || '');
-            setEstado(userData.estado || '');
-          }
-        } catch (error) {
-          console.error('Erro ao carregar dados do usuário:', error);
-          Alert.alert('Erro', 'Não foi possível carregar seus dados. Tente novamente mais tarde.');
-        }
+      // Verifica se o usuário está autenticado
+      if (!user?.uid) {
+        setIsLoading(false);
+        return;
       }
-      setIsLoading(false);
+      
+      try {
+        const userDocRef = doc(db, 'usuarios', user.uid);
+        const userDoc = await getDoc(userDocRef);
+        
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          setNome(userData.nome || '');
+          setCpf(userData.cpf || '');
+          setTelefone(userData.telefone || '');
+          setCep(userData.cep || '');
+          setEndereco(userData.endereco || '');
+          setNumero(userData.numero || '');
+          setComplemento(userData.complemento || '');
+          setBairro(userData.bairro || '');
+          setCidade(userData.cidade || '');
+          setEstado(userData.estado || '');
+        }
+      } catch (error) {
+        console.error('Erro ao carregar dados do usuário:', error);
+        Alert.alert('Erro', 'Não foi possível carregar seus dados. Tente novamente mais tarde.');
+      } finally {
+        setIsLoading(false);
+      }
     };
 
     carregarDadosUsuario();
@@ -88,6 +104,12 @@ export default function UserProfileScreen({ navigation }) {
 
   // Função para salvar os dados do perfil
   const salvarPerfil = async () => {
+    // Verifica se o usuário está autenticado
+    if (!user?.uid) {
+      Alert.alert('Erro de Autenticação', 'Você precisa estar logado para salvar seu perfil');
+      return;
+    }
+    
     if (!nome.trim()) {
       Alert.alert('Campo obrigatório', 'Por favor, preencha seu nome');
       return;
@@ -156,6 +178,23 @@ export default function UserProfileScreen({ navigation }) {
     }
   };
 
+  // Se o usuário não estiver autenticado, mostra mensagem e botão para voltar
+  if (!user) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.title}>Acesso Restrito</Text>
+        <Text style={styles.message}>Você precisa estar logado para acessar seu perfil.</Text>
+        <TouchableOpacity 
+          style={[styles.saveButton, {backgroundColor: '#4b7bec'}]} 
+          onPress={() => navigation.navigate('Home')}
+        >
+          <Text style={styles.saveButtonText}>Voltar para Home</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+  
+  // Mostra indicador de carregamento enquanto busca os dados
   if (isLoading) {
     return (
       <View style={styles.container}>
@@ -173,7 +212,7 @@ export default function UserProfileScreen({ navigation }) {
         
         <Text style={styles.label}>Email</Text>
         <TextInput
-          style={styles.input}
+          style={[styles.input, {backgroundColor: '#eee'}]}
           value={user?.email || ''}
           editable={false}
         />
@@ -296,6 +335,12 @@ export default function UserProfileScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
+  message: {
+    fontSize: 16,
+    marginBottom: 20,
+    textAlign: 'center',
+    color: '#555',
+  },
   scrollContainer: {
     flexGrow: 1,
   },
