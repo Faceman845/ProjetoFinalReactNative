@@ -16,6 +16,8 @@ export default function HomeScreen({ navigation }) {
       <View style={styles.spacing} />
       <Button title="Ver Carrinho" onPress={() => navigation.navigate('Carrinho')} />
       <View style={styles.spacing} />
+      <Button title="Meu Perfil" onPress={() => navigation.navigate('Meu Perfil')} color="#4b7bec" />
+      <View style={styles.spacing} />
       <Button title="Sair" onPress={handleLogout} color="red" />
     </View>
   );
