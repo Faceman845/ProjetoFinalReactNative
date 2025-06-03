@@ -23,8 +23,8 @@ export default function CatalogScreen() {
         setProducts(productsList);
         setError(null);
       } catch (err) {
-        console.error('Error fetching products:', err);
-        setError('Failed to load products. Please try again later.');
+        console.error('Erro ao buscar produtos:', err);
+        setError('Falha ao carregar produtos. Tente novamente mais tarde.');
       } finally {
         setLoading(false);
       }
@@ -37,7 +37,7 @@ export default function CatalogScreen() {
     return (
       <View style={[styles.container, styles.centered]}>
         <ActivityIndicator size="large" color="#0000ff" />
-        <Text style={styles.loadingText}>Loading products...</Text>
+        <Text style={styles.loadingText}>Carregando produtos...</Text>
       </View>
     );
   }
@@ -68,7 +68,7 @@ export default function CatalogScreen() {
         )}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No products available</Text>
+            <Text style={styles.emptyText}>Nenhum produto disponível</Text>
           </View>
         }
       />

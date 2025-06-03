@@ -6,7 +6,6 @@ export default function HomeScreen({ navigation }) {
   const { logout } = useContext(AuthContext);
 
   const handleLogout = () => {
-    // Don't clear cart on logout to preserve items between sessions
     logout();
   };
 
