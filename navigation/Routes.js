@@ -6,7 +6,7 @@ import AppStack from './AppStack';
 
 export default function Routes() {
   const { user } = useContext(AuthContext);
-
+  console.log('Usuário atual em Routes:', user);
   return (
     <NavigationContainer>
       {user ? <AppStack /> : <AuthStack />}

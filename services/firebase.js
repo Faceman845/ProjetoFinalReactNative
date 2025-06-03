@@ -1,5 +1,9 @@
-import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider } from 'firebase/auth';
+import { initializeApp, getApp, getApps} from 'firebase/app';
+import {getReactNativePersistence} from '@firebase/auth/dist/rn/index.js'
+import {initializeAuth, signInWithCredential, GoogleAuthProvider} from 'firebase/auth';
+import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
+import { getFirestore } from 'firebase/firestore';
+import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 
 const firebaseConfig = {
   apiKey: "AIzaSyBNCp4Mc1oR71VXxFzHyusqFrICkSkNOys",
@@ -10,8 +14,20 @@ const firebaseConfig = {
   appId: "1:600857194384:web:5c2a19120ba8f928aa4d15"
 };
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const googleProvider = new GoogleAuthProvider();
+let app;
+if (getApps().length === 0) { // Linha 18 (aproximadamente) que estava causando o erro
+  app = initializeApp(firebaseConfig);
+} else {
+  app = getApp();
+}
 
-export { auth, googleProvider };
+console.log("Firebase App instance:", app);
+console.log("ReactNativeAsyncStorage object:", ReactNativeAsyncStorage);
+const googleProvider = new GoogleAuthProvider();
+const db = getFirestore(app);
+
+export const auth = initializeAuth(app, {
+  persistence: getReactNativePersistence(ReactNativeAsyncStorage)
+});
+
+export {GoogleSignin, statusCodes, signInWithCredential, googleProvider, db };
