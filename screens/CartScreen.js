@@ -67,7 +67,7 @@ export default function CartScreen({ navigation }) {
               onPress={() => navigation.navigate('Catalogo')} 
               color="#007bff"
             />
-            <View style={{width: 15}}/>
+            <View style={{width: 15, padding: 5,}}/>
             <Button 
               title="Esvaziar Carrinho" 
               onPress={clearCart} 
@@ -158,10 +158,11 @@ const styles = StyleSheet.create({
     color: '#28a745',
   },
   footerButtons: {
-    flexDirection: 'row',
+    flexDirection: 'column',
+    alignItems: 'center',
     justifyContent: 'space-around',
-    marginTop: 10,
-    marginBottom: 10,
+    marginTop: 5,
+    marginBottom: 5,
   },
   emptyCartContainer: {
     flex: 1,
