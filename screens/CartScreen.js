@@ -39,7 +39,7 @@ export default function CartScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Carrinho de Compras</Text>
+      <Text style={styles.title}>Carrinho de Festas</Text>
       {cart.length === 0 ? (
         <View style={styles.emptyCartContainer}>
           <Ionicons name="cart-outline" size={80} color="#ccc" />
