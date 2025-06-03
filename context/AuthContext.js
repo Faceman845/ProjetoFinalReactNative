@@ -1,12 +1,24 @@
+// Importando os hooks e funções necessários do React para criação do contexto de autenticação
 import React, { createContext, useState, useEffect } from 'react';
+// Importando funções de autenticação do Firebase
 import { onAuthStateChanged, signOut } from 'firebase/auth';
+// Importando a instância de autenticação do Firebase configurada no projeto
 import { auth } from '../services/firebase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+// Criando o contexto de autenticação que será usado em toda a aplicação
 export const AuthContext = createContext();
 
+/**
+ * Provedor de contexto de autenticação que gerencia:
+ * - Estado de autenticação do usuário
+ * - Carrinho de compras
+ * - Persistência de dados entre sessões
+ */
 export const AuthProvider = ({ children }) => {
+  // Estado para armazenar informações do usuário autenticado
   const [user, setUser] = useState(null);
+  // Estado para gerenciar itens do carrinho de compras
   const [cart, setCart] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -50,6 +62,10 @@ export const AuthProvider = ({ children }) => {
     return () => unsubscribe();
   }, []);
 
+  /**
+   * Função para realizar logout do usuário no Firebase Auth
+   * O estado 'user' será atualizado automaticamente pelo listener onAuthStateChanged
+   */
   const logout = async () => {
     try {
       // Only sign out from Firebase, don't clear cart
@@ -60,6 +76,11 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  /**
+   * Função para adicionar um item ao carrinho de compras
+   * Utiliza o padrão funcional com callback para garantir que estamos trabalhando com o estado mais recente
+   * @param {Object} item - O item a ser adicionado ao carrinho
+   */
   const addToCart = (item) => {
     setCart((prevCart) => [...prevCart, item]);
   };
@@ -75,6 +96,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
+    <AuthContext.Provider value={{ user, logout, cart, addToCart, clearCart, isLoading }}>
     <AuthContext.Provider value={{ user, logout, cart, addToCart, clearCart, isLoading }}>
       {children}
     </AuthContext.Provider>

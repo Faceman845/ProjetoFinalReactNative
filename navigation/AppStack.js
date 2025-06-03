@@ -136,7 +136,7 @@ export default function AppStack() {
     >
       <Drawer.Screen name="Catalogo" component={CatalogScreen} options={{ title: 'Catálogo' }} />
       <Drawer.Screen name="Carrinho" component={CartScreen} options={{ title: 'Carrinho' }} />
-      <Drawer.Screen name="Perfil" component={ProfileScreen} options={{ title: 'Meu Perfil' }}/>
+      <Drawer.Screen name="Perfil" component={UserProfileScreen} options={{ title: 'Meu Perfil' }}/>
     </Drawer.Navigator>
   );
 }
