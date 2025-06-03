@@ -9,7 +9,7 @@ import {
   Alert
 } from 'react-native';
 import { AuthContext } from '../context/AuthContext';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../services/firebase';
 
 export default function UserProfileScreen({ navigation }) {
@@ -177,6 +177,64 @@ export default function UserProfileScreen({ navigation }) {
       setTelefone(telefoneFormatado);
     }
   };
+  
+  // Função para limpar as informações do perfil
+  const limparInformacoes = async () => {
+    // Verificar se o usuário está autenticado
+    if (!user || !user.uid) {
+      Alert.alert('Erro de Autenticação', 'Você precisa estar logado para limpar seu perfil');
+      return;
+    }
+    
+    console.log('Iniciando processo de limpeza de dados para o usuário:', user.uid);
+    
+    Alert.alert(
+      "Limpar Informações",
+      "Tem certeza que deseja limpar todas as suas informações de perfil? Esta ação não pode ser desfeita.",
+      [
+        { text: "Cancelar", style: "cancel" },
+        { 
+          text: "Limpar", 
+          style: "destructive",
+          onPress: async () => {
+            try {
+              console.log('Usuário confirmou a limpeza de dados');
+              
+              // Verificar se o documento existe antes de tentar excluí-lo
+              const userDocRef = doc(db, 'usuarios', user.uid);
+              const docSnap = await getDoc(userDocRef);
+              
+              if (docSnap.exists()) {
+                console.log('Documento encontrado, iniciando exclusão...');
+                await deleteDoc(userDocRef);
+                console.log('Documento excluído com sucesso');
+              } else {
+                console.log('Documento não encontrado, nada para excluir');
+              }
+              
+              // Limpar os estados locais
+              setNome('');
+              setCpf('');
+              setTelefone('');
+              setCep('');
+              setEndereco('');
+              setNumero('');
+              setComplemento('');
+              setBairro('');
+              setCidade('');
+              setEstado('');
+              
+              console.log('Estados locais limpos com sucesso');
+              Alert.alert("Sucesso", "Suas informações foram removidas com sucesso.");
+            } catch (error) {
+              console.error('Erro ao limpar informações:', error);
+              Alert.alert('Erro', 'Não foi possível limpar suas informações. Tente novamente mais tarde. Erro: ' + error.message);
+            }
+          } 
+        }
+      ]
+    );
+  };
 
   // Se o usuário não estiver autenticado, mostra mensagem e botão para voltar
   if (!user) {
@@ -329,6 +387,16 @@ export default function UserProfileScreen({ navigation }) {
         <TouchableOpacity style={styles.saveButton} onPress={salvarPerfil}>
           <Text style={styles.saveButtonText}>Salvar Dados</Text>
         </TouchableOpacity>
+        
+        <View style={styles.spacing} />
+        
+        <TouchableOpacity 
+          style={styles.clearButton} 
+          onPress={limparInformacoes}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.clearButtonText}>Limpar Informações</Text>
+        </TouchableOpacity>
       </View>
     </ScrollView>
   );
@@ -421,6 +489,22 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   saveButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  spacing: {
+    height: 10,
+  },
+  clearButton: {
+    backgroundColor: '#ff9500',
+    padding: 15,
+    borderRadius: 5,
+    alignItems: 'center',
+    marginTop: 10,
+    marginBottom: 30,
+  },
+  clearButtonText: {
     color: 'white',
     fontWeight: 'bold',
     fontSize: 16,
