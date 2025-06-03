@@ -1,27 +1,53 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, Image, TouchableOpacity, ActivityIndicator, Platform } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, StyleSheet, Image, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../services/firebase';
 import { Ionicons } from '@expo/vector-icons';
 
-// --- IMAGENS ---
 const logoSmallImage = require('../assets/party_shop_logo_small.png');
 
-
 export default function RegisterScreen({ navigation }) {
+  // Estados para armazenar os dados do formulário
+  // email, password e confirmPassword são usados para o registro do usuário
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Exemplo de requisitos de senha
-  const passwordRequirements = [
-    "Mínimo de 6 caracteres",
-    "Pelo menos uma letra maiúscula (A-Z)",
-    "Pelo menos uma letra minúscula (a-z)",
-    "Pelo menos um número (0-9)",
-  ];
+  // Estados para verificar os requisitos da senha
+  const [metLength, setMetLength] = useState(false);
+  const [metUppercase, setMetUppercase] = useState(false);
+  const [metLowercase, setMetLowercase] = useState(false);
+  const [metNumber, setMetNumber] = useState(false);
+  const [metSpecialChar, setMetSpecialChar] = useState(false);
 
+  // Requisitos da senha
+  // Cada requisito é verificado e armazenado em um estado separado
+  const passwordRequirementsChecks = [
+    { label: "Mínimo de 6 caracteres", met: metLength },
+    { label: "Pelo menos uma letra maiúscula (A-Z)", met: metUppercase },
+    { label: "Pelo menos uma letra minúscula (a-z)", met: metLowercase },
+    { label: "Pelo menos um número (0-9)", met: metNumber },
+    { label: "Pelo menos um caractere especial (ex: !@#$%)", met: metSpecialChar },
+  ];
+  
+  // Função para validar a senha conforme os requisitos
+  const validatePassword = (currentPassword) => {
+    setMetLength(currentPassword.length >= 6);
+    setMetUppercase(/[A-Z]/.test(currentPassword));
+    setMetLowercase(/[a-z]/.test(currentPassword));
+    setMetNumber(/[0-9]/.test(currentPassword));
+    setMetSpecialChar(/[!@#$%^&*(),.?":{}|<>]/.test(currentPassword));
+  };
+
+  // useEffect para validar a senha sempre que ela mudar
+  // Isso garante que os requisitos sejam verificados em tempo real
+  useEffect(() => {
+    validatePassword(password);
+  }, [password]);
+
+  // Função para lidar com o registro do usuário
+  // Verifica se todos os campos estão preenchidos e se a senha atende aos requisitos
   const handleRegister = async () => {
     if (!email || !password || !confirmPassword) {
       alert('Por favor, preencha todos os campos.');
@@ -32,36 +58,8 @@ export default function RegisterScreen({ navigation }) {
       return;
     }
 
-    let NmrError = 0; // Número de erros para exibir uma mensagem
-    let errorMessages = [];
-
-    if (password.length < 6) { // Verifica se a senha tem pelo menos 6 caracteres
-      errorMessages.push("A senha deve ter no mínimo 6 caracteres.");
-      NmrError++;
-    }
-    if (!/[A-Z]/.test(password)) { // Verifica se a senha contém pelo menos uma letra maiúscula
-      errorMessages.push("A senha deve conter pelo menos uma letra maiúscula.");
-      NmrError++;
-    }
-    if (!/[a-z]/.test(password)) { // Verifica se a senha contém pelo menos uma letra minúscula
-      errorMessages.push("A senha deve conter pelo menos uma letra minúscula.");
-      NmrError++;
-    }
-    if (!/[0-9]/.test(password)) { // Verifica se a senha contém pelo menos um número
-      errorMessages.push("A senha deve conter pelo menos um número.");
-      NmrError++;
-    }
-    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) { // Verifica se a senha contém pelo menos um caractere especial
-      errorMessages.push("A senha deve conter pelo menos um caractere especial.");
-      NmrError++;
-    }
-
-    if (NmrError > 0) {
-      if (NmrError === 1) {
-          alert(errorMessages.join("\n")); // Exibe apenas uma mensagem de erro se for um único requisito
-      } else {
-          alert(`Sua senha não atende aos seguintes ${NmrError > 1 ? NmrError + ' requisitos' : 'requisito'}:\n\n- ` + errorMessages.join("\n- "));
-      }
+    if (!metLength || !metUppercase || !metLowercase || !metNumber || !metSpecialChar) {
+      alert('Por favor, certifique-se de que a senha atende a todos os requisitos.');
       return;
     }
     
@@ -70,10 +68,10 @@ export default function RegisterScreen({ navigation }) {
       await createUserWithEmailAndPassword(auth, email, password);
       alert('Cadastro realizado com sucesso! Faça o login.');
       navigation.navigate('Login');
-      } catch (error) {
+    } catch (error) {
       alert(error.message);
-      }
-      setIsLoading(false);
+    }
+    setIsLoading(false);
   };
 
   if (isLoading) {
@@ -106,13 +104,19 @@ export default function RegisterScreen({ navigation }) {
           onChangeText={setPassword}
           style={styles.input}
         />
-        {/* Exibição dos requisitos de senha */}
          <View style={styles.requirementsContainer}>
           <Text style={styles.requirementsTitle}>A senha deve atender aos seguintes requisitos:</Text>
-          {passwordRequirements.map((requirement, index) => (
+          {passwordRequirementsChecks.map((req, index) => (
             <View key={index} style={styles.requirementItem}>
-              <Ionicons name="ellipse-outline" size={14} color="#555" style={styles.requirementIcon} />
-              <Text style={styles.requirementText}>{requirement}</Text>
+              <Ionicons 
+                name={req.met ? "checkmark-circle" : "ellipse-outline"} 
+                size={18}
+                color={req.met ? "#4CAF50" : "#555"}
+                style={styles.requirementIcon} 
+              />
+              <Text style={[styles.requirementText, req.met && styles.requirementMetText]}>
+                {req.label}
+              </Text>
             </View>
           ))}
         </View>
@@ -137,11 +141,8 @@ export default function RegisterScreen({ navigation }) {
       </View>
     </View>
   );
-};
+}
 
-
-
-// Estilos adaptados do LoginScreen, com ajustes para a tela de Cadastro
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -163,14 +164,16 @@ const styles = StyleSheet.create({
   logo: { 
     width: 160,
     height: 80,
+    marginTop: 10,
     marginBottom: 10,
   },
   inputGroup: { 
     width: '100%',
+    maxWidth: 400,
     backgroundColor: '#E0F7FA',
     borderRadius: 15,
-    padding: 25,
-    marginBottom: 25,
+    padding: 20,
+    marginBottom: 20,
     borderWidth: 2,
     borderColor: '#00BCD4',
     elevation: 5,
@@ -190,20 +193,48 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#B2DFDB',
     paddingHorizontal: 15,
-    paddingVertical: 12,
-    marginBottom: 18,
+    paddingVertical: 10,
+    marginBottom: 10,
     borderRadius: 8,
     fontSize: 16,
     color: '#333',
   },
+  requirementsContainer: {
+    marginTop: 5, 
+    marginBottom: 15, 
+    paddingHorizontal: 0,
+  },
+  requirementsTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#00796B', 
+    marginBottom: 8,
+  },
+  requirementItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  requirementIcon: {
+    marginRight: 8,
+  },
+  requirementText: {
+    fontSize: 13,
+    color: '#555', 
+    flexShrink: 1,
+  },
+  requirementMetText: {
+    color: '#4CAF50',
+  },
   buttonRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    width: '90%', 
+    width: '100%', 
+    maxWidth: 400,
     marginBottom: 20,
   },
   button: {
-    paddingVertical: 16,
+    paddingVertical: 15,
     borderRadius: 25,
     alignItems: 'center',
     width: '48%', 
@@ -218,7 +249,7 @@ const styles = StyleSheet.create({
     borderColor: '#00BCD4',
   },
   buttonText: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: 'bold',
   },
   buttonTextFilled: {

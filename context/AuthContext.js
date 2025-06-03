@@ -22,7 +22,7 @@ export const AuthProvider = ({ children }) => {
   const [cart, setCart] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load cart from AsyncStorage when the component mounts
+  // Carrega o carrinho de compras do AsyncStorage quando o componente é montado
   useEffect(() => {
     const loadCart = async () => {
       try {
@@ -40,7 +40,8 @@ export const AuthProvider = ({ children }) => {
     loadCart();
   }, []);
 
-  // Save cart to AsyncStorage whenever it changes
+  // Efeito para salvar o carrinho de compras no AsyncStorage sempre que ele for atualizado
+  // Isso garante que o carrinho persista entre as sessões do usuário
   useEffect(() => {
     const saveCart = async () => {
       try {
@@ -54,7 +55,7 @@ export const AuthProvider = ({ children }) => {
 
     saveCart();
   }, [cart, isLoading]);
-
+  // Listener para monitorar mudanças no estado de autenticação do usuário
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
@@ -85,18 +86,25 @@ export const AuthProvider = ({ children }) => {
     setCart((prevCart) => [...prevCart, item]);
   };
 
+  // Função para limpar o carrinho de compras
+  // Esta função remove todos os itens do carrinho e também limpa o AsyncStorage
   const clearCart = async () => {
     setCart([]);
     // Clear cart from AsyncStorage
     try {
       await AsyncStorage.removeItem('userCart');
     } catch (error) {
-      console.error('Error clearing cart from AsyncStorage:', error);
+      console.error('Erro ao limpar o carrinho:', error);
     }
   };
+  // Função para remover um item específico do carrinho de compras
+  const removeItemFromCart = (itemId) => {
+    setCart((prevCart) => prevCart.filter(item => item.id !== itemId));
+  };
 
+  // Retorna o contexto de autenticação com os valores necessários
   return (
-    <AuthContext.Provider value={{ user, logout, cart, addToCart, clearCart, isLoading }}>
+    <AuthContext.Provider value={{ user, logout, cart, addToCart, clearCart, isLoading , removeItemFromCart }}>
       {children}
     </AuthContext.Provider>
   );
